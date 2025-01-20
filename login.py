@@ -1,101 +1,275 @@
-from kivy.config import Config
-
-# Set the resolution and prevent resizing
-Config.set('graphics', 'width', '800')
-Config.set('graphics', 'height', '600')
-Config.set('graphics', 'resizable', False)
-
-from kivy.app import App
-from kivy.uix.screenmanager import ScreenManager, Screen, WipeTransition
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.image import Image
+from kivy.uix.screenmanager import Screen
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+from kivy.uix.image import Image
 from kivy.uix.behaviors import ButtonBehavior
-from game import MainScreen, Level1Screen, Level2Screen, Level3Screen
+from kivy.uix.floatlayout import FloatLayout
+from kivy.core.audio import SoundLoader
+from kivy.uix.button import Button
+from kivy.graphics import Rectangle
+from kivy.storage.jsonstore import JsonStore
+from datetime import datetime
+from kivy.uix.gridlayout import GridLayout
 
-# Subclass ImageButton for image-based buttons
+store = JsonStore('user_data.json')
+
 class ImageButton(ButtonBehavior, Image):
     pass
 
-# Main menu screen
-class MainMenuScreen(Screen):
+class RegisterScreen(Screen):
+    def goto_login(self, instance, touch):
+        if instance.collide_point(*touch.pos):
+            self.manager.current = 'login'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.clear_widgets()
+
+        # Set background image
+        with self.canvas:
+            self.bg = Rectangle(source='asset/login.png', size=self.size, pos=self.pos)
+        self.bind(size=self.update_bg, pos=self.update_bg)
+
+        # Main layout
         layout = FloatLayout()
-        
-        # Background image
-        background = Image(
-            source='asset/back1.png',
-            allow_stretch=True,
-            keep_ratio=False,
-            size_hint=(1, 1),
-            pos_hint={'x': 0, 'y': 0}
-        )
-        layout.add_widget(background)
 
-        # Title of the game
-        title_label = Label(
-            text="GAME EDUKASI\nBELAJAR MEMBACA",
-            font_size='45sp',
+        # Form background
+        form_bg = Image(source='asset/background.png', size_hint=(0.8, 0.6), pos_hint={'center_x': 0.5, 'center_y': 0.5})
+        layout.add_widget(form_bg)
+
+        # Form content layout
+        form_layout = BoxLayout(
+            orientation="vertical",
+            spacing=5,
             size_hint=(None, None),
-            size=(500, 100),
+            width=220,  # Fixed width for alignment
+            height=300,
+            pos_hint={"center_x": 0.5, "center_y": 0.5},
+        )
+
+        # Username label and input
+        Register_Label = Label(
+            text="Daftar",
             color=(1, 1, 1, 1),
-            halign='center',
-            valign='middle',
-            font_name='Roboto',  
-            bold=True,  
-            pos_hint={'center_x': 0.5, 'center_y': 0.8}
-        )
-        layout.add_widget(title_label)
-
-        # Start button
-        start_button = ImageButton(
-            source='asset/anakpanah.png',  # Replace with your button image
+            font_size=20,
+            halign="center",  # Center-align horizontally
+            valign="middle",  # Center-align vertically
             size_hint=(None, None),
-            size=(100, 100),
-            pos_hint={'center_x': 0.5, 'bottom': 1}
+            size=(220, 30),  # Set the size of the label
         )
-        start_button.bind(on_press=self.go_to_login)
-        layout.add_widget(start_button)
+        Register_Label.bind(size=Register_Label.setter('text_size'))  # Ensure alignment works within bounds
+        form_layout.add_widget(Register_Label)
 
+        # Username label and input
+        username_label = Label(
+            text="NAMA",
+            color=(1, 1, 1, 1),
+            font_size=15,
+            halign="center",  # Center-align horizontally
+            valign="middle",  # Center-align vertically
+            size_hint=(None, None),
+            size=(220, 30),  # Set the size of the label
+        )
+        username_label.bind(size=username_label.setter('text_size'))  # Ensure alignment works within bounds
+        form_layout.add_widget(username_label)
+
+        self.username_input = TextInput(
+            multiline=False,
+            size_hint=(None, None),
+            width=220,
+            height=50,
+            background_color=(1, 1, 1, 1),
+            foreground_color=(0, 0, 0, 1),
+            hint_text="Masukkan Nama",
+            hint_text_color=(0.7, 0.7, 0.7, 1),
+        )
+        form_layout.add_widget(self.username_input)
+
+        # Password label and input
+        password_label = Label(
+            text="PASSWORD",
+            color=(1, 1, 1, 1),
+            font_size=15,
+            halign="center",  # Center-align horizontally
+            valign="middle",  # Center-align vertically
+            size_hint=(None, None),
+            size=(220, 30),  # Set the size of the label
+        )
+        password_label.bind(size=password_label.setter('text_size'))  # Ensure alignment works within bounds
+        form_layout.add_widget(password_label)
+
+        self.password_input = TextInput(
+            multiline=False,
+            password=True,
+            size_hint=(None, None),
+            width=220,
+            height=50,
+            background_color=(1, 1, 1, 1),
+            foreground_color=(0, 0, 0, 1),
+            hint_text="Masukkan Password",
+            hint_text_color=(0.7, 0.7, 0.7, 1),
+        )
+        form_layout.add_widget(self.password_input)
+
+        link_layout = GridLayout(cols=2, spacing=10, size_hint=(1, None), height=30)
+
+        login_link = Label(
+            text="[u][color=#FFFFFF]Sudah punya akun? Masuk[/color][/u]",
+            markup=True,
+            font_size=15,
+            size_hint=(0.5, 1),
+            halign="left",
+        )
+        login_link.bind(on_touch_down=self.goto_login)
+        link_layout.add_widget(login_link)
+        form_layout.add_widget(link_layout)
+
+        # Login button
+        login_button = Button(
+            text="MASUK",
+            font_size=20,
+            background_normal="asset/button.png",
+            background_down="asset/button.png",
+            size_hint=(None, None),
+            size=(220, 50),
+            pos_hint={"center_x": 0.5},
+            color=(1, 1, 1, 1),  # White text
+        )
+        login_button.bind(on_press=self.register)
+        form_layout.add_widget(login_button)
+
+        layout.add_widget(form_layout)
         self.add_widget(layout)
 
-    def go_to_login(self, instance):
-        self.manager.current = 'login'
+    def update_bg(self, *args):
+        self.bg.size = self.size
+        self.bg.pos = self.pos
+    def register(self, instance):
+        username = self.username_input.text.strip()
+        password = self.password_input.text.strip()
 
-class MainApp(App):
-    def build(self):
-        screen_manager = ScreenManager(transition=WipeTransition())
-        
-        # Add screens
-        screen_manager.add_widget(MainMenuScreen(name='main'))
-        
-        try:
-            from login import LoginScreen
-            screen_manager.add_widget(LoginScreen(name='login'))
-        except ImportError as e:
-            print(f"Error importing LoginScreen: {e}")
-            placeholder = Screen(name='login')
-            placeholder.add_widget(Label(text="Login screen not found!", font_size='24sp', pos_hint={'center_x': 0.5, 'center_y': 0.5}))
-            screen_manager.add_widget(placeholder)
-        try:
-            from login import RegisterScreen
-            screen_manager.add_widget(RegisterScreen(name='register'))
-        except ImportError as e:
-            print(f"Error importing RegisterScreen: {e}")
-            placeholder = Screen(name='register')
-            placeholder.add_widget(Label(text="Register screen not found!", font_size='24sp', pos_hint={'center_x': 0.5, 'center_y': 0.5}))
-            screen_manager.add_widget(placeholder)
+        if username and password:
+            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            store.put('user',
+                        name=username,
+                        password=password,
+                        created_at=created_at,
+                        logged_in=True)
+            print("Registration successful!")
+            self.manager.current = 'game'
+        else:
+            print("Username and password cannot be empty.")
 
-        # Add game screen
-        game_screen = Screen(name='game')
-        game_screen.add_widget(MainScreen())
-        screen_manager.add_widget(game_screen)
-        screen_manager.add_widget(Level1Screen(name="level1"))
-        screen_manager.add_widget(Level2Screen(name="level2"))
-        screen_manager.add_widget(Level3Screen(name="level3"))
+class LoginScreen(Screen):
+    def goto_register(self, instance, touch):
+        if instance.collide_point(*touch.pos):
+            self.manager.current = 'register'
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.setup_ui()
 
-        return screen_manager
+    def setup_ui(self):
+        self.clear_widgets()
 
-if __name__ == "__main__":
-    MainApp().run()
+        with self.canvas.before:
+            self.bg = Rectangle(source='asset/login.png', size=self.size, pos=self.pos)
+        self.bind(size=self.update_bg, pos=self.update_bg)
+
+        layout = FloatLayout()
+
+        form_bg = Image(source='asset/background.png', size_hint=(0.8, 0.6), pos_hint={'center_x': 0.5, 'center_y': 0.5})
+        layout.add_widget(form_bg)
+
+        form_layout = BoxLayout(
+            orientation="vertical",
+            spacing=5,
+            size_hint=(None, None),
+            width=220,
+            height=300,
+            pos_hint={"center_x": 0.5, "center_y": 0.5},
+        )
+
+        login_label = Label(
+            text="MASUK", color=(1, 1, 1, 1), font_size=20, halign="center", valign="middle"
+        )
+        login_label.bind(size=login_label.setter('text_size'))
+        form_layout.add_widget(login_label)
+
+        username_label = Label(
+            text="NAMA", color=(1, 1, 1, 1), font_size=15, halign="center", valign="middle"
+        )
+        username_label.bind(size=username_label.setter('text_size'))
+        form_layout.add_widget(username_label)
+
+        self.username_input = TextInput(
+            multiline=False,
+            hint_text="Masukkan Nama",
+            size_hint=(None, None),
+            width=220,
+            height=50,
+        )
+        form_layout.add_widget(self.username_input)
+
+        password_label = Label(
+            text="PASSWORD", color=(1, 1, 1, 1), font_size=15, halign="center", valign="middle"
+        )
+        password_label.bind(size=password_label.setter('text_size'))
+        form_layout.add_widget(password_label)
+
+        self.password_input = TextInput(
+            multiline=False,
+            password=True,
+            hint_text="Masukkan Password",
+            size_hint=(None, None),
+            width=220,
+            height=50,
+        )
+        form_layout.add_widget(self.password_input)
+
+        link_layout = GridLayout(cols=2, spacing=10, size_hint=(1, None), height=30)
+        register_link = Label(
+            text="[u][color=#FFFFFF]Belum punya akun? Daftar[/color][/u]",
+            markup=True,
+            font_size=15,
+            size_hint=(0.5, 1),
+            halign="right",
+        )
+        register_link.bind(on_touch_down=self.goto_register)
+
+        link_layout.add_widget(register_link)
+        form_layout.add_widget(link_layout)
+
+        login_button = Button(
+            text="MASUK",
+            font_size=20,
+            background_normal="asset/button.png",
+            background_down="asset/button.png",
+            size_hint=(None, None),
+            size=(220, 50),
+            pos_hint={"center_x": 0.5},
+            color=(1, 1, 1, 1),
+        )
+        login_button.bind(on_press=self.login)
+        form_layout.add_widget(login_button)
+
+        layout.add_widget(form_layout)
+        self.add_widget(layout)
+
+    def update_bg(self, *args):
+        self.bg.size = self.size
+        self.bg.pos = self.pos
+
+    def login(self, instance):
+        username = self.username_input.text.strip()
+        password = self.password_input.text.strip()
+
+        if store.exists('user'):
+            user_data = store.get('user')
+            if username == user_data.get('name') and password == user_data.get('password'):
+                print("Login successful!")
+                self.manager.current = 'game'
+            else:
+                print("Invalid credentials.")
+        else:
+            print("No user data found. Please register first.")
