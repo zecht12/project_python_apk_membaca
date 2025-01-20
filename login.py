@@ -1,140 +1,101 @@
-from kivy.uix.screenmanager import Screen
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.image import Image
-from kivy.uix.behaviors import ButtonBehavior
+from kivy.config import Config
+
+# Set the resolution and prevent resizing
+Config.set('graphics', 'width', '800')
+Config.set('graphics', 'height', '600')
+Config.set('graphics', 'resizable', False)
+
+from kivy.app import App
+from kivy.uix.screenmanager import ScreenManager, Screen, WipeTransition
 from kivy.uix.floatlayout import FloatLayout
-from kivy.core.audio import SoundLoader
-from kivy.uix.button import Button
-from kivy.graphics import Rectangle
+from kivy.uix.image import Image
+from kivy.uix.label import Label
+from kivy.uix.behaviors import ButtonBehavior
+from game import MainScreen, Level1Screen, Level2Screen, Level3Screen
 
-
+# Subclass ImageButton for image-based buttons
 class ImageButton(ButtonBehavior, Image):
     pass
 
-
-class LoginScreen(Screen):
+# Main menu screen
+class MainMenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.clear_widgets()
-
-        # Set background image
-        with self.canvas:
-            self.bg = Rectangle(source='asset/login.png', size=self.size, pos=self.pos)
-        self.bind(size=self.update_bg, pos=self.update_bg)
-
-        # Main layout
         layout = FloatLayout()
-
-        # Form background
-        form_bg = Image(source='asset/background.png', size_hint=(0.8, 0.6), pos_hint={'center_x': 0.5, 'center_y': 0.5})
-        layout.add_widget(form_bg)
-
-        # Form content layout
-        form_layout = BoxLayout(
-            orientation="vertical",
-            spacing=10,
-            size_hint=(None, None),
-            width=220,  # Fixed width for alignment
-            height=300,
-            pos_hint={"center_x": 0.5, "center_y": 0.5},
+        
+        # Background image
+        background = Image(
+            source='asset/back1.png',
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint=(1, 1),
+            pos_hint={'x': 0, 'y': 0}
         )
+        layout.add_widget(background)
 
-        # Username label and input
-        username_label = Label(
-            text="NAMA",
+        # Title of the game
+        title_label = Label(
+            text="GAME EDUKASI\nBELAJAR MEMBACA",
+            font_size='45sp',
+            size_hint=(None, None),
+            size=(500, 100),
             color=(1, 1, 1, 1),
-            font_size=20,
-            halign="center",  # Center-align horizontally
-            valign="middle",  # Center-align vertically
-            size_hint=(None, None),
-            size=(220, 50),  # Set the size of the label
+            halign='center',
+            valign='middle',
+            font_name='Roboto',  
+            bold=True,  
+            pos_hint={'center_x': 0.5, 'center_y': 0.8}
         )
-        username_label.bind(size=username_label.setter('text_size'))  # Ensure alignment works within bounds
-        form_layout.add_widget(username_label)
+        layout.add_widget(title_label)
 
-        self.username_input = TextInput(
-            multiline=False,
+        # Start button
+        start_button = ImageButton(
+            source='asset/anakpanah.png',  # Replace with your button image
             size_hint=(None, None),
-            width=220,
-            height=50,
-            background_color=(1, 1, 1, 1),
-            foreground_color=(0, 0, 0, 1),
-            hint_text="Masukkan Nama",
-            hint_text_color=(0.7, 0.7, 0.7, 1),
+            size=(100, 100),
+            pos_hint={'center_x': 0.5, 'bottom': 1}
         )
-        form_layout.add_widget(self.username_input)
-
-        # Password label and input
-        password_label = Label(
-            text="PASSWORD",
-            color=(1, 1, 1, 1),
-            font_size=20,
-            halign="center",  # Center-align horizontally
-            valign="middle",  # Center-align vertically
-            size_hint=(None, None),
-            size=(220, 50),  # Set the size of the label
-        )
-        password_label.bind(size=password_label.setter('text_size'))  # Ensure alignment works within bounds
-        form_layout.add_widget(password_label)
-
-        self.password_input = TextInput(
-            multiline=False,
-            password=True,
-            size_hint=(None, None),
-            width=220,
-            height=50,
-            background_color=(1, 1, 1, 1),
-            foreground_color=(0, 0, 0, 1),
-            hint_text="Masukkan Password",
-            hint_text_color=(0.7, 0.7, 0.7, 1),
-        )
-        form_layout.add_widget(self.password_input)
-
-        # Login button
-        login_button = Button(
-            text="MASUK",
-            font_size=20,
-            background_normal="asset/button.png",
-            background_down="asset/button.png",
-            size_hint=(None, None),
-            size=(220, 50),
-            pos_hint={"center_x": 0.5},
-            color=(1, 1, 1, 1),  # White text
-        )
-        login_button.bind(on_press=self.login)
-        form_layout.add_widget(login_button)
-
-        layout.add_widget(form_layout)
-        self.add_widget(layout)
-
-    def update_bg(self, *args):
-        self.bg.size = self.size
-        self.bg.pos = self.pos
-
-    def login(self, instance):
-        username = self.username_input.text
-        password = self.password_input.text
-
-        if username == "admin" and password == "admin":
-            self.manager.current = "game"
-        else:
-            print("Username atau password salah.")
-
-
-class HomeScreen(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
-        layout.add_widget(Label(text='Selamat Datang di Halaman Home!', font_size=24, size_hint=(1, 0.2)))
-
-        logout_button = Button(text='Logout', size_hint=(None, None), size=(150, 50), pos_hint={'center_x': 0.5})
-        logout_button.bind(on_press=self.logout)
-        layout.add_widget(logout_button)
+        start_button.bind(on_press=self.go_to_login)
+        layout.add_widget(start_button)
 
         self.add_widget(layout)
 
-    def logout(self, instance):
+    def go_to_login(self, instance):
         self.manager.current = 'login'
+
+class MainApp(App):
+    def build(self):
+        screen_manager = ScreenManager(transition=WipeTransition())
+        
+        # Add screens
+        screen_manager.add_widget(MainMenuScreen(name='main'))
+        
+        try:
+            from login import LoginScreen
+            screen_manager.add_widget(LoginScreen(name='login'))
+        except ImportError as e:
+            print(f"Error importing LoginScreen: {e}")
+            placeholder = Screen(name='login')
+            placeholder.add_widget(Label(text="Login screen not found!", font_size='24sp', pos_hint={'center_x': 0.5, 'center_y': 0.5}))
+            screen_manager.add_widget(placeholder)
+        try:
+            from login import RegisterScreen
+            screen_manager.add_widget(RegisterScreen(name='register'))
+        except ImportError as e:
+            print(f"Error importing RegisterScreen: {e}")
+            placeholder = Screen(name='register')
+            placeholder.add_widget(Label(text="Register screen not found!", font_size='24sp', pos_hint={'center_x': 0.5, 'center_y': 0.5}))
+            screen_manager.add_widget(placeholder)
+
+        # Add game screen
+        game_screen = Screen(name='game')
+        game_screen.add_widget(MainScreen())
+        screen_manager.add_widget(game_screen)
+        screen_manager.add_widget(Level1Screen(name="level1"))
+        screen_manager.add_widget(Level2Screen(name="level2"))
+        screen_manager.add_widget(Level3Screen(name="level3"))
+
+        return screen_manager
+
+if __name__ == "__main__":
+    MainApp().run()

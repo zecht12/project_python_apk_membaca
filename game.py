@@ -1,12 +1,13 @@
-import random
 import pyttsx3
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.screenmanager import Screen
 from kivy.core.audio import SoundLoader
+from kivy.uix.popup import Popup
+from kivy.uix.textinput import TextInput
 
 # Initialize pyttsx3 for text-to-speech
 engine = pyttsx3.init()
@@ -23,7 +24,7 @@ class MainScreen(Screen):
         self.selected_level = None
 
         # Play background music
-        self.sound = SoundLoader.load('asset/musik.homepage.mp3')
+        self.sound = SoundLoader.load('asset/musik/homepage.mp3')
         if self.sound:
             self.sound.loop = True
             self.sound.play()
@@ -124,21 +125,21 @@ class Level1Screen(Screen):
         layout = FloatLayout()
 
         # Set white background
-        self.background = Image(source='', allow_stretch=True, keep_ratio=False, color=[1, 1, 1, 1])
+        self.background = Image(source='asset/level1.jpeg', allow_stretch=True, keep_ratio=False, color=[1, 1, 1, 1])
         self.add_widget(self.background)
 
         title = Label(
             text="[b]HURUF A SAMPAI Z[/b]",  # Black text
             markup=True,
             font_size="24sp",
-            color=(0, 0, 0, 1),
+            color=(0,0,0,1),
             pos_hint={"center_x": 0.5, "y": 0.4},
         )
         layout.add_widget(title)
 
         # Add smaller buttons for letters A-Z
         letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        button_size = 0.07
+        button_size = 0.1
         gap = 0.02
         for i, letter in enumerate(letters):
             btn = Button(
@@ -167,7 +168,7 @@ class Level1Screen(Screen):
 
     def play_audio(self, letter):
         """Play the corresponding letter audio from the assets folder."""
-        sound_path = f"asset/{letter.lower()}.mp3"
+        sound_path = f"asset/musik/{letter.lower()}.mp3"
         sound = SoundLoader.load(sound_path)
         if sound:
             sound.play()
@@ -182,15 +183,15 @@ class Level2Screen(Screen):
         layout = FloatLayout()
 
         # Set white background
-        self.background = Image(source='', allow_stretch=True, keep_ratio=False, color=[1, 1, 1, 1])
+        self.background = Image(source='asset/level2.jpeg', allow_stretch=True, keep_ratio=False, color=[1, 1, 1, 1])
         self.add_widget(self.background)
 
         title = Label(
             text="[b]HURUF VOKAL AIUEO[/b]",
             markup=True,
             font_size="24sp",
-            color=(0, 0, 0, 1),
-            pos_hint={"center_x": 0.5, "y": 0.4},
+            color=(0,0,0,1),
+            pos_hint={"center_x": 0.5, "y": 0.2},
         )
         layout.add_widget(title)
 
@@ -201,7 +202,7 @@ class Level2Screen(Screen):
         for i, vowel in enumerate(vowels):
             btn = Button(
                 text=vowel,
-                background_normal='asset/button_jawab.png',
+                background_normal='asset/button_jawab1.png',
                 size_hint=(0.08, 0.08),
                 pos_hint={
                     'x': 0.2 + i * (button_size + gap) - gap,
@@ -225,40 +226,113 @@ class Level2Screen(Screen):
 
     def play_audio(self, vowel):
         """Play the corresponding vowel audio from the assets folder."""
-        sound_path = f"asset/{vowel.lower()}.mp3"
+        sound_path = f"asset/musik/{vowel.lower()}.mp3"
         sound = SoundLoader.load(sound_path)
         if sound:
             sound.play()
         else:
             print(f"Audio file {sound_path} not found.")
 
-# Level 3 Screen
+kata_benda = ["mobil", "pohon", "buku", "kucing", "rumah"]
+kata_kerja = ["lari", "makan", "tidur", "baca", "tulis"]
+
+CORRECT_ANSWER = kata_benda + kata_kerja
+
 class Level3Screen(Screen):
     def exit_to_main(self):
         App.get_running_app().root.current = "game"
+
     def __init__(self, **kwargs):
         super(Level3Screen, self).__init__(**kwargs)
         layout = FloatLayout()
 
-        # Placeholder empty layout
-        label = Label(
-            text="[b]LEVEL 3 - COMING SOON[/b]",
-            markup=True,
-            font_size='20sp',
-            color=(0, 0, 0, 1),
-            pos_hint={'center_x': 0.5, 'center_y': 0.4},
-        )
-        layout.add_widget(label)
+        # Play the audio when the screen is initialized
+        self.sound = SoundLoader.load('asset/musik/soal_level3.mp3')
+        if self.sound:
+            self.sound.play()
 
-        # Add "Keluar" button
+        # Set white background
+        self.background = Image(source='asset/level3.jpeg', allow_stretch=True, keep_ratio=False, color=[1, 1, 1, 1])
+        self.add_widget(self.background)
+
+        # Add "DENGARKAN BAIK-BAIK" text
+        title = Label(
+            text="[b]DENGARKAN BAIK-BAIK[/b]",
+            markup=True,
+            font_size="24sp",
+            color=(0,0,0,1),
+            pos_hint={"center_x": 0.5, "y": 0.2},
+        )
+        layout.add_widget(title)
+
+        # Add input field
+        self.input_field = TextInput(
+            hint_text="Masukkan jawaban...",
+            background_normal='asset/input.png',
+            multiline=False,
+            size_hint=(0.6, 0.15),
+            pos_hint={"center_x": 0.5, "y": 0.5},
+        )
+        layout.add_widget(self.input_field)
+
+        # Add "KIRIM" button
+        send_btn = Button(
+            text="[color=ffffff]KIRIM[/color]",
+            markup=True,
+            background_normal='asset/button_keluar.png',
+            size_hint=(0.3, 0.1),
+            pos_hint={"center_x": 0.5, "y": 0.3},
+        )
+        send_btn.bind(on_press=self.check_answer)
+        layout.add_widget(send_btn)
+
+        self.add_widget(layout)
+
+    def check_answer(self, instance):
+        user_answer = self.input_field.text.strip()
+        if user_answer == CORRECT_ANSWER:
+            self.show_popup("Correct!", "Jawaban Anda benar.")
+        else:
+            self.show_popup("Incorrect!", "Jawaban Anda salah.")
+
+    def show_popup(self, title, message):
+        content = FloatLayout()
+
+        # Add message
+        label = Label(
+            text=message,
+            font_size="18sp",
+            halign="center",  # Center-align horizontally
+            valign="middle",  # Center-align vertically
+            color=(0, 0, 0, 1),
+            pos_hint={"center_x": 0.5, "center_y": 0.6},
+        )
+        content.add_widget(label)
+
         exit_btn = Button(
             text="[color=ffffff]KELUAR[/color]",
             markup=True,
             background_normal='asset/button_keluar.png',
-            size_hint=(0.3, 0.1),
-            pos_hint={'center_x': 0.5, 'y': 0.1},
+            size_hint=(0.4, 0.2),
+            pos_hint={"center_x": 0.5, "center_y": 0.3},
         )
-        exit_btn.bind(on_press=lambda instance: self.exit_to_main())
-        layout.add_widget(exit_btn)
 
-        self.add_widget(layout)
+        def dismiss_popup_and_exit(instance):
+            popup.dismiss()
+            self.exit_to_main()
+
+        exit_btn.bind(on_press=dismiss_popup_and_exit)
+        content.add_widget(exit_btn)
+
+        popup = Popup(
+            title=title,
+            content=content,
+            background="asset/white.png",
+            size_hint=(0.8, 0.5),
+            auto_dismiss=False,
+            separator_color=(0, 0, 0, 0),
+            title_color=(0,0,0,1),
+            title_size=(24),
+            title_align="center",
+        )
+        popup.open()
