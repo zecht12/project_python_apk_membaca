@@ -57,7 +57,7 @@ class MainScreen(Screen):
         )
         self.add_widget(self.description_label)
 
-        # Add "Mulai" button with text
+        # Add "Mulai" button with text and sound
         self.start_button = Button(
             text="[color=ffffff][b]MULAI[/b][/color]",
             markup=True,
@@ -67,7 +67,17 @@ class MainScreen(Screen):
             size_hint=(0.15, 0.05),
             pos_hint={'center_x': 0.5, 'center_y': 0.45},
         )
-        self.start_button.bind(on_press=self.start_level)
+
+        def play_entry_sound_and_start_level(instance):
+            # Play the entry sound
+            sound = SoundLoader.load('asset/musik/entry.mp3')
+            if sound:
+                sound.play()
+            # Proceed to the selected level
+            self.start_level(instance)
+
+        # Bind the button press to play sound and navigate to the level
+        self.start_button.bind(on_press=play_entry_sound_and_start_level)
         self.add_widget(self.start_button)
 
         # Add buttons for Level 1, 2, and 3
@@ -87,7 +97,18 @@ class MainScreen(Screen):
                 size_hint=(0.15, 0.15),
                 pos_hint=level['pos_hint'],
             )
-            btn.bind(on_press=lambda instance, l=level['level']: self.select_level(l))
+
+            # Define the on_press callback with sound playback
+            def on_button_press(instance, l=level['level']):
+                # Play the masuk sound
+                sound = SoundLoader.load('asset/musik/masuk.mp3')
+                if sound:
+                    sound.play()
+                # Call select_level
+                self.select_level(l)
+
+            # Bind the button to the custom callback
+            btn.bind(on_press=on_button_press)
             self.add_widget(btn)
 
     def select_level(self, level):
@@ -139,16 +160,22 @@ class Level1Screen(Screen):
 
         # Add smaller buttons for letters A-Z
         letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        button_size = 0.1
-        gap = 0.02
+        button_size = 0.1  # Size of each button
+        gap = 0.02  # Gap between buttons
+        columns = 6  # Number of buttons per row
+
         for i, letter in enumerate(letters):
+            # Calculate x and y positions dynamically based on the index
+            x_pos = (i % columns) * (button_size + gap) + (1 - columns * button_size - (columns - 1) * gap) / 2
+            y_pos = 0.7 - (i // columns) * (button_size + gap)
+
             btn = Button(
                 text=letter,
                 background_normal='asset/button_jawab.png',
                 size_hint=(button_size, button_size),
                 pos_hint={
-                    'x': (i % 10) * (button_size + gap) + 0.05,
-                    'y': 0.7 - (i // 10) * (button_size + gap),
+                    'x': x_pos,
+                    'y': y_pos,
                 },
             )
             btn.bind(on_press=lambda instance, l=letter: self.play_audio(l))
@@ -161,7 +188,18 @@ class Level1Screen(Screen):
             size_hint=(0.3, 0.1),
             pos_hint={'center_x': 0.5, 'y': 0.1},
         )
-        exit_btn.bind(on_press=lambda instance: self.exit_to_main())
+
+        # Define the on_press callback with sound playback
+        def on_exit_press(instance):
+            # Play the keluar sound
+            sound = SoundLoader.load('asset/musik/keluar.mp3')
+            if sound:
+                sound.play()
+            # Navigate to the main screen
+            self.exit_to_main()
+
+        # Bind the button to the custom callback
+        exit_btn.bind(on_press=on_exit_press)
         layout.add_widget(exit_btn)
 
         self.add_widget(layout)
@@ -219,7 +257,18 @@ class Level2Screen(Screen):
             size_hint=(0.3, 0.1),
             pos_hint={'center_x': 0.5, 'y': 0.1},
         )
-        exit_btn.bind(on_press=lambda instance: self.exit_to_main())
+
+        # Define the on_press callback with sound playback
+        def on_exit_press(instance):
+            # Play the keluar sound
+            sound = SoundLoader.load('asset/musik/keluar.mp3')
+            if sound:
+                sound.play()
+            # Navigate to the main screen
+            self.exit_to_main()
+
+        # Bind the button to the custom callback
+        exit_btn.bind(on_press=on_exit_press)
         layout.add_widget(exit_btn)
 
         self.add_widget(layout)
@@ -283,16 +332,34 @@ class Level3Screen(Screen):
             size_hint=(0.3, 0.1),
             pos_hint={"center_x": 0.5, "y": 0.3},
         )
-        send_btn.bind(on_press=self.check_answer)
+
+        # Define the on_press callback with sound playback
+        def on_send_press(instance):
+            # Play the masuk sound
+            sound = SoundLoader.load('asset/musik/masuk.mp3')
+            if sound:
+                sound.play()
+            # Call the check_answer method
+            self.check_answer(instance)
+
+        # Bind the button to the custom callback
+        send_btn.bind(on_press=on_send_press)
         layout.add_widget(send_btn)
 
         self.add_widget(layout)
 
     def check_answer(self, instance):
         user_answer = self.input_field.text.strip()
-        if user_answer == CORRECT_ANSWER:
+
+        if user_answer in CORRECT_ANSWER:  # Check if the user's answer is correct
+            sound = SoundLoader.load('asset/musik/menang.mp3')
+            if sound:
+                sound.play()
             self.show_popup("Correct!", "Jawaban Anda benar.")
         else:
+            sound = SoundLoader.load('asset/musik/kalah.mp3')
+            if sound:
+                sound.play()
             self.show_popup("Incorrect!", "Jawaban Anda salah.")
 
     def show_popup(self, title, message):
@@ -313,15 +380,20 @@ class Level3Screen(Screen):
             text="[color=ffffff]KELUAR[/color]",
             markup=True,
             background_normal='asset/button_keluar.png',
-            size_hint=(0.4, 0.2),
-            pos_hint={"center_x": 0.5, "center_y": 0.3},
+            size_hint=(0.4, 0.3),
+            pos_hint={'center_x': 0.5, 'y': 0.1},
         )
 
-        def dismiss_popup_and_exit(instance):
+        # Define the on_press callback with sound playback
+        def on_exit_press(instance):
+            sound = SoundLoader.load('asset/musik/keluar.mp3')
+            if sound:
+                sound.play()
             popup.dismiss()
             self.exit_to_main()
 
-        exit_btn.bind(on_press=dismiss_popup_and_exit)
+        # Bind the button to the custom callback
+        exit_btn.bind(on_press=on_exit_press)
         content.add_widget(exit_btn)
 
         popup = Popup(

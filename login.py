@@ -11,6 +11,7 @@ from kivy.graphics import Rectangle
 from kivy.storage.jsonstore import JsonStore
 from datetime import datetime
 from kivy.uix.gridlayout import GridLayout
+from kivy.core.audio import SoundLoader
 
 store = JsonStore('user_data.json')
 
@@ -48,17 +49,17 @@ class RegisterScreen(Screen):
             pos_hint={"center_x": 0.5, "center_y": 0.5},
         )
 
-        # Username label and input
+        # Register Label
         Register_Label = Label(
             text="Daftar",
             color=(1, 1, 1, 1),
             font_size=20,
-            halign="center",  # Center-align horizontally
-            valign="middle",  # Center-align vertically
+            halign="center",
+            valign="middle",
             size_hint=(None, None),
-            size=(220, 30),  # Set the size of the label
+            size=(220, 30),
         )
-        Register_Label.bind(size=Register_Label.setter('text_size'))  # Ensure alignment works within bounds
+        Register_Label.bind(size=Register_Label.setter('text_size'))
         form_layout.add_widget(Register_Label)
 
         # Username label and input
@@ -66,12 +67,12 @@ class RegisterScreen(Screen):
             text="NAMA",
             color=(1, 1, 1, 1),
             font_size=15,
-            halign="center",  # Center-align horizontally
-            valign="middle",  # Center-align vertically
+            halign="center",
+            valign="middle",
             size_hint=(None, None),
-            size=(220, 30),  # Set the size of the label
+            size=(220, 30),
         )
-        username_label.bind(size=username_label.setter('text_size'))  # Ensure alignment works within bounds
+        username_label.bind(size=username_label.setter('text_size'))
         form_layout.add_widget(username_label)
 
         self.username_input = TextInput(
@@ -91,12 +92,12 @@ class RegisterScreen(Screen):
             text="PASSWORD",
             color=(1, 1, 1, 1),
             font_size=15,
-            halign="center",  # Center-align horizontally
-            valign="middle",  # Center-align vertically
+            halign="center",
+            valign="middle",
             size_hint=(None, None),
-            size=(220, 30),  # Set the size of the label
+            size=(220, 30),
         )
-        password_label.bind(size=password_label.setter('text_size'))  # Ensure alignment works within bounds
+        password_label.bind(size=password_label.setter('text_size'))
         form_layout.add_widget(password_label)
 
         self.password_input = TextInput(
@@ -125,7 +126,7 @@ class RegisterScreen(Screen):
         link_layout.add_widget(login_link)
         form_layout.add_widget(link_layout)
 
-        # Login button
+        # Login button with sound effect
         login_button = Button(
             text="MASUK",
             font_size=20,
@@ -136,15 +137,25 @@ class RegisterScreen(Screen):
             pos_hint={"center_x": 0.5},
             color=(1, 1, 1, 1),  # White text
         )
-        login_button.bind(on_press=self.register)
+        login_button.bind(on_press=self.play_sound_and_register)  # Bind to the new method
         form_layout.add_widget(login_button)
 
         layout.add_widget(form_layout)
         self.add_widget(layout)
 
+    def play_sound_and_register(self, instance):
+        # Play the button click sound
+        sound = SoundLoader.load('asset/musik/masuk.mp3')
+        if sound:
+            sound.play()
+        
+        # Perform the registration logic
+        self.register(instance)
+
     def update_bg(self, *args):
         self.bg.size = self.size
         self.bg.pos = self.pos
+
     def register(self, instance):
         username = self.username_input.text.strip()
         password = self.password_input.text.strip()
@@ -165,6 +176,7 @@ class LoginScreen(Screen):
     def goto_register(self, instance, touch):
         if instance.collide_point(*touch.pos):
             self.manager.current = 'register'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.setup_ui()
@@ -240,6 +252,7 @@ class LoginScreen(Screen):
         link_layout.add_widget(register_link)
         form_layout.add_widget(link_layout)
 
+        # Login button with sound effect
         login_button = Button(
             text="MASUK",
             font_size=20,
@@ -250,7 +263,7 @@ class LoginScreen(Screen):
             pos_hint={"center_x": 0.5},
             color=(1, 1, 1, 1),
         )
-        login_button.bind(on_press=self.login)
+        login_button.bind(on_press=self.play_sound_and_login)  # Bind to the new method
         form_layout.add_widget(login_button)
 
         layout.add_widget(form_layout)
@@ -259,6 +272,15 @@ class LoginScreen(Screen):
     def update_bg(self, *args):
         self.bg.size = self.size
         self.bg.pos = self.pos
+
+    def play_sound_and_login(self, instance):
+        # Play the button click sound
+        sound = SoundLoader.load('asset/musik/masuk.mp3')
+        if sound:
+            sound.play()
+
+        # Perform the login logic
+        self.login(instance)
 
     def login(self, instance):
         username = self.username_input.text.strip()

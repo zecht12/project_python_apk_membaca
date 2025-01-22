@@ -6,6 +6,7 @@ Config.set('graphics', 'height', '600')
 Config.set('graphics', 'resizable', False)
 
 from kivy.app import App
+from kivy.core.audio import SoundLoader
 from kivy.uix.screenmanager import ScreenManager, Screen, WipeTransition
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.image import Image
@@ -22,7 +23,7 @@ class MainMenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = FloatLayout()
-        
+
         # Background image
         background = Image(
             source='asset/back1.png',
@@ -51,12 +52,18 @@ class MainMenuScreen(Screen):
             size=(150, 150),
             pos_hint={'center_x': 0.5, 'center_y': 0.4}
         )
-        start_button.bind(on_press=self.go_to_login)
+        start_button.bind(on_press=self.play_sound_and_go_to_login)
         layout.add_widget(start_button)
 
         self.add_widget(layout)
 
-    def go_to_login(self, instance):
+    def play_sound_and_go_to_login(self, instance):
+        # Play the button click sound
+        sound = SoundLoader.load('asset/musik/masuk.mp3')
+        if sound:
+            sound.play()
+        
+        # Navigate to the login screen
         self.manager.current = 'login'
 
 class MainApp(App):
@@ -73,6 +80,14 @@ class MainApp(App):
             print(f"Error importing LoginScreen: {e}")
             placeholder = Screen(name='login')
             placeholder.add_widget(Label(text="Login screen not found!", font_size='24sp', pos_hint={'center_x': 0.5, 'center_y': 0.5}))
+            screen_manager.add_widget(placeholder)
+        try:
+            from login import RegisterScreen
+            screen_manager.add_widget(RegisterScreen(name='register'))
+        except ImportError as e:
+            print(f"Error importing RegisterScreen: {e}")
+            placeholder = Screen(name='register')
+            placeholder.add_widget(Label(text="Register screen not found!", font_size='24sp', pos_hint={'center_x': 0.5, 'center_y': 0.5}))
             screen_manager.add_widget(placeholder)
 
         # Add game screen
