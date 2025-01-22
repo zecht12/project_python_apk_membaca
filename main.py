@@ -72,7 +72,6 @@ class MainApp(App):
         
         # Add screens
         screen_manager.add_widget(MainMenuScreen(name='main'))
-        
         try:
             from login import LoginScreen
             screen_manager.add_widget(LoginScreen(name='login'))
