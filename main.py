@@ -19,11 +19,12 @@ class ImageButton(ButtonBehavior, Image):
     pass
 
 # Main menu screen
+# Main menu screen
 class MainMenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = FloatLayout()
-
+        
         # Background image
         background = Image(
             source='asset/back1.png',
@@ -36,16 +37,19 @@ class MainMenuScreen(Screen):
 
         # Title of the game
         title_label = Label(
-            text="BELAJAR MEMBACA",
-            font_size='60sp',
+            text="GAME EDUKASI\nBELAJAR MEMBACA",
+            font_size='45sp',
             size_hint=(None, None),
             size=(500, 100),
             color=(1, 1, 1, 1),
-            pos_hint={'center_x': 0.5, 'center_y': 0.7}
+            halign='center',
+            valign='middle',
+            font_name='Roboto',  
+            bold=True,  
+            pos_hint={'center_x': 0.5, 'center_y': 0.8}
         )
         layout.add_widget(title_label)
 
-        # Start button
         start_button = ImageButton(
             source='asset/anakpanah.png',  # Replace with your button image
             size_hint=(None, None),
@@ -57,13 +61,7 @@ class MainMenuScreen(Screen):
 
         self.add_widget(layout)
 
-    def play_sound_and_go_to_login(self, instance):
-        # Play the button click sound
-        sound = SoundLoader.load('asset/musik/masuk.mp3')
-        if sound:
-            sound.play()
-        
-        # Navigate to the login screen
+    def go_to_login(self, instance):
         self.manager.current = 'login'
 
 class MainApp(App):
