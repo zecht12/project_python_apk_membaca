@@ -24,7 +24,6 @@ class MainMenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = FloatLayout()
-        
         # Background image
         background = Image(
             source='asset/back1.png',
