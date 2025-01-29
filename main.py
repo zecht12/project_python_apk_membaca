@@ -61,7 +61,10 @@ class MainMenuScreen(Screen):
 
         self.add_widget(layout)
 
-    def go_to_login(self, instance):
+    def play_sound_and_go_to_login(self, instance):
+        sound = SoundLoader.load('asset/musik/masuk.mp3')
+        if sound:
+            sound.play()
         self.manager.current = 'login'
 
 class MainApp(App):

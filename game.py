@@ -5,7 +5,9 @@ from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen
+from kivy.clock import Clock
 from kivy.core.audio import SoundLoader
+import random
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 
@@ -284,21 +286,21 @@ class Level2Screen(Screen):
 
 kata_benda = ["mobil", "pohon", "buku", "kucing", "rumah"]
 kata_kerja = ["lari", "makan", "tidur", "baca", "tulis"]
-
-CORRECT_ANSWER = kata_benda + kata_kerja
+CORRECT_ANSWER = [word.lower() for word in kata_benda + kata_kerja]  # Normalize to lowercase
 
 class Level3Screen(Screen):
     def exit_to_main(self):
         App.get_running_app().root.current = "game"
-
     def __init__(self, **kwargs):
         super(Level3Screen, self).__init__(**kwargs)
-        layout = FloatLayout()
+        self.score = 0
+        self.current_question = 0
+        self.total_questions = 4
+        self.time_left = 20
+        self.current_word = ""
+        self.timer_event = None
 
-        # Play the audio when the screen is initialized
-        self.sound = SoundLoader.load('asset/musik/soal_level3.mp3')
-        if self.sound:
-            self.sound.play()
+        layout = FloatLayout()
 
         # Set white background
         self.background = Image(source='asset/level3.jpeg', allow_stretch=True, keep_ratio=False, color=[1, 1, 1, 1])
@@ -309,15 +311,23 @@ class Level3Screen(Screen):
             text="[b]DENGARKAN BAIK-BAIK[/b]",
             markup=True,
             font_size="24sp",
-            color=(0,0,0,1),
-            pos_hint={"center_x": 0.5, "y": 0.2},
+            color=(0, 0, 0, 1),
+            pos_hint={"center_x": 0.5, "y": 0.3},
         )
         layout.add_widget(title)
+
+        # Add timer label
+        self.timer_label = Label(
+            text=f"Waktu: {self.time_left} detik",
+            font_size="18sp",
+            color=(0, 0, 0, 1),
+            pos_hint={"center_x": 0.5, "y": 0.2},
+        )
+        layout.add_widget(self.timer_label)
 
         # Add input field
         self.input_field = TextInput(
             hint_text="Masukkan jawaban...",
-            background_normal='asset/input.png',
             multiline=False,
             size_hint=(0.6, 0.15),
             pos_hint={"center_x": 0.5, "y": 0.5},
@@ -330,47 +340,103 @@ class Level3Screen(Screen):
             markup=True,
             background_normal='asset/button_keluar.png',
             size_hint=(0.3, 0.1),
-            pos_hint={"center_x": 0.5, "y": 0.3},
+            pos_hint={"center_x": 0.5, "y": 0.2},
         )
-
-        # Define the on_press callback with sound playback
-        def on_send_press(instance):
-            # Play the masuk sound
-            sound = SoundLoader.load('asset/musik/masuk.mp3')
-            if sound:
-                sound.play()
-            # Call the check_answer method
-            self.check_answer(instance)
-
-        # Bind the button to the custom callback
-        send_btn.bind(on_press=on_send_press)
+        send_btn.bind(on_press=self.submit_answer)
         layout.add_widget(send_btn)
 
         self.add_widget(layout)
+        self.start_question()
 
-    def check_answer(self, instance):
-        user_answer = self.input_field.text.strip()
+    def start_question(self):
+        # Reset input and timer
+        self.input_field.text = ""
+        self.time_left = 20
+        self.update_timer_label()
 
-        if user_answer in CORRECT_ANSWER:  # Check if the user's answer is correct
-            sound = SoundLoader.load('asset/musik/menang.mp3')
-            if sound:
-                sound.play()
-            self.show_popup("Correct!", "Jawaban Anda benar.")
+        # Select a random word and play audio
+        self.current_word = random.choice(kata_benda + kata_kerja).lower()
+        sound_path = f"asset/musik/{self.current_word}.mp3"
+        sound = SoundLoader.load(sound_path)
+        if sound:
+            sound.play()
+
+        # Start timer
+        if self.timer_event:
+            self.timer_event.cancel()
+        self.timer_event = Clock.schedule_interval(self.update_timer, 1)
+
+    def update_timer(self, dt):
+        self.time_left -= 1
+        self.update_timer_label()
+
+        if self.time_left <= 0:
+            self.timer_event.cancel()
+            self.show_popup("Waktu Habis!", "Jawaban yang benar: " + self.current_word)
+
+    def update_timer_label(self):
+        self.timer_label.text = f"Waktu: {self.time_left} detik"
+
+    def submit_answer(self, instance):
+        user_answer = self.input_field.text.strip().lower()
+        if user_answer == self.current_word:
+            self.score += 25
+            self.show_popup("Benar!", "Jawaban Anda benar.")
         else:
-            sound = SoundLoader.load('asset/musik/kalah.mp3')
-            if sound:
-                sound.play()
-            self.show_popup("Incorrect!", "Jawaban Anda salah.")
+            self.show_popup("Salah!", "Jawaban Anda salah.")
 
     def show_popup(self, title, message):
         content = FloatLayout()
 
-        # Add message
         label = Label(
             text=message,
             font_size="18sp",
-            halign="center",  # Center-align horizontally
-            valign="middle",  # Center-align vertically
+            halign="center",
+            valign="middle",
+            color=(0, 0, 0, 1),
+            pos_hint={"center_x": 0.5, "center_y": 0.6},
+        )
+        content.add_widget(label)
+
+        next_btn = Button(
+            text="[color=ffffff]LANJUT[/color]",
+            markup=True,
+            background_normal='asset/button_keluar.png',
+            size_hint=(0.4, 0.3),
+            pos_hint={'center_x': 0.5, 'y': 0.1},
+        )
+        next_btn.bind(on_press=lambda x: self.next_question())
+        content.add_widget(next_btn)
+
+        self.popup = Popup(
+            title=title,
+            content=content,
+            separator_color=(0, 0, 0, 0),
+            background="asset/white.png",
+            size_hint=(0.8, 0.5),
+            auto_dismiss=False,
+        )
+        self.popup.open()
+
+    def next_question(self):
+        if self.popup:
+            self.popup.dismiss()
+            self.popup = None
+
+        self.current_question += 1
+        if self.current_question < self.total_questions:
+            self.start_question()
+        else:
+            self.show_final_score()
+
+    def show_final_score(self):
+        content = FloatLayout()
+
+        label = Label(
+            text=f"Skor Akhir Anda: {self.score}",
+            font_size="20sp",
+            halign="center",
+            valign="middle",
             color=(0, 0, 0, 1),
             pos_hint={"center_x": 0.5, "center_y": 0.6},
         )
@@ -384,27 +450,19 @@ class Level3Screen(Screen):
             pos_hint={'center_x': 0.5, 'y': 0.1},
         )
 
-        # Define the on_press callback with sound playback
-        def on_exit_press(instance):
-            sound = SoundLoader.load('asset/musik/keluar.mp3')
-            if sound:
-                sound.play()
-            popup.dismiss()
+        def exit_to_main(instance):
             self.exit_to_main()
+            popup.dismiss()
 
-        # Bind the button to the custom callback
-        exit_btn.bind(on_press=on_exit_press)
+        exit_btn.bind(on_press=exit_to_main)
         content.add_widget(exit_btn)
 
         popup = Popup(
-            title=title,
+            title="Game Selesai",
             content=content,
+            separator_color=(0, 0, 0, 0),
             background="asset/white.png",
             size_hint=(0.8, 0.5),
             auto_dismiss=False,
-            separator_color=(0, 0, 0, 0),
-            title_color=(0,0,0,1),
-            title_size=(24),
-            title_align="center",
         )
         popup.open()
